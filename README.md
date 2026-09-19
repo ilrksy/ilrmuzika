@@ -23,6 +23,12 @@
 
 ---
 
+<p align="center">
+  <img src="./preview.png" alt="ilrmuzika TUI Interface" width="900" />
+</p>
+
+---
+
 ## ⚡ Architecture & Features
 
 `ilrmuzika` is a POSIX/Win32-native TUI music streaming client and player designed for immediate responsiveness, low memory overhead, and deterministic execution.
