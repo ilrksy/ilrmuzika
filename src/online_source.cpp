@@ -2,8 +2,29 @@
 #include "process_util.h"
 #include <cctype>
 #include <sstream>
+#include <filesystem>
+#include <unistd.h>
 
 namespace muisc {
+
+namespace fs = std::filesystem;
+
+static fs::path find_fast_search_script() {
+    fs::path cwd_candidate = fs::path("scripts") / "fast_yt_search.py";
+    if (fs::exists(cwd_candidate)) return cwd_candidate;
+
+    char exe_buf[4096];
+    ssize_t n = readlink("/proc/self/exe", exe_buf, sizeof(exe_buf) - 1);
+    if (n > 0) {
+        exe_buf[n] = '\0';
+        fs::path exe_dir = fs::path(exe_buf).parent_path();
+        fs::path p = exe_dir / "scripts" / "fast_yt_search.py";
+        if (fs::exists(p)) return p;
+        p = exe_dir.parent_path() / "scripts" / "fast_yt_search.py";
+        if (fs::exists(p)) return p;
+    }
+    return cwd_candidate;
+}
 
 // Same tiny flat-JSON string extractor used in lyrics_fetcher.cpp — kept
 // local here since yt-dlp's per-line JSON objects are the only thing that
@@ -64,8 +85,37 @@ static bool json_get_number(const std::string& json, const std::string& key, dou
 
 std::vector<OnlineResult> OnlineSource::search(const std::string& query, int count) {
     std::vector<OnlineResult> results;
-    std::string cmd = "yt-dlp -4 --no-warnings --match-filters \"categories *= 'Music' & duration >= 90\" --flat-playlist -j "
-                       "\"ytsearch" + std::to_string(count) + ":" + query + "\"";
+    if (query.empty()) return results;
+
+    // 1) Fast path: Innertube API via python script (~0.2s, no yt-dlp startup overhead)
+    fs::path script = find_fast_search_script();
+    if (fs::exists(script)) {
+        std::string fast_cmd = "python3 " + shell_quote(script.string()) + " " +
+                               shell_quote(query) + " " + std::to_string(count);
+        ProcResult fast_r = run_capture(fast_cmd);
+        if (!fast_r.out.empty()) {
+            std::istringstream stream(fast_r.out);
+            std::string line;
+            while (std::getline(stream, line)) {
+                if (line.empty() || line[0] != '{') continue;
+                OnlineResult item;
+                std::string uploader;
+                json_get_string(line, "id", item.video_id);
+                json_get_string(line, "title", item.title);
+                if (!json_get_string(line, "uploader", uploader)) {
+                    json_get_string(line, "channel", uploader);
+                }
+                item.uploader = uploader;
+                json_get_number(line, "duration", item.duration_sec);
+                if (!item.video_id.empty() && !item.title.empty()) results.push_back(std::move(item));
+            }
+            if (!results.empty()) return results;
+        }
+    }
+
+    // 2) Fallback: yt-dlp flat-playlist search (relaxed filter: don't restrict categories or drop <90s tracks)
+    std::string cmd = "yt-dlp -4 --no-warnings --flat-playlist -j "
+                      "\"ytsearch" + std::to_string(count) + ":" + query + "\"";
     ProcResult r = run_capture(cmd);
     if (r.out.empty()) return results;
 

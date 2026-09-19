@@ -21,9 +21,6 @@ void Player::data_callback(ma_device* device, void* output, const void* /*input*
     StreamingPcm& pcm = *self->pcm_;
     long long cur = self->cursor_frames_.load();
     float gain = self->gain_.load();
-    // Acquire-load: pairs with the release-store in StreamingPcm::append(),
-    // guaranteeing every index below `avail` was fully written by the
-    // decode thread before we read it here.
     size_t avail = pcm.available.load(std::memory_order_acquire);
 
     for (ma_uint32 i = 0; i < frame_count; ++i) {
@@ -31,12 +28,12 @@ void Player::data_callback(ma_device* device, void* output, const void* /*input*
         out[i] = (idx >= 0 && static_cast<size_t>(idx) < avail) ? pcm.data[static_cast<size_t>(idx)] * gain : 0.0f;
     }
 
+    // Apply DSP equalizer (mono — 1 channel, no interleaving needed)
+    self->eq_.process_interleaved(out, frame_count, 1);
+
     if (self->fft_sink_) self->fft_sink_->push_samples(out, frame_count, self->sample_rate_);
 
     long long new_cur = cur + static_cast<long long>(frame_count);
-    // Only truly "finished" once decode is done AND playback has caught
-    // all the way up to everything it ever produced — not just the
-    // current available count, which may still be growing while we play.
     if (pcm.decode_done.load() &&
         new_cur >= 0 && static_cast<size_t>(new_cur) >= pcm.available.load(std::memory_order_acquire)) {
         self->finished_.store(true);
@@ -119,6 +116,16 @@ void Player::set_volume(int volume_pct) {
 double Player::poll_elapsed() const {
     if (sample_rate_ <= 0) return 0.0;
     return static_cast<double>(cursor_frames_.load()) / sample_rate_;
+}
+
+void Player::set_eq_preset(EqPreset p) {
+    eq_.set_sample_rate(static_cast<float>(sample_rate_));
+    eq_.set_preset(p);
+}
+
+void Player::cycle_eq() {
+    eq_.set_sample_rate(static_cast<float>(sample_rate_));
+    eq_.cycle_preset();
 }
 
 void Player::stop() {

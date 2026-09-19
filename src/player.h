@@ -4,6 +4,7 @@
 #include "miniaudio.h"
 #include "streaming_pcm.h"
 #include "fft_visualizer.h"
+#include "dsp_equalizer.h"
 
 namespace muisc {
 
@@ -64,6 +65,12 @@ public:
 
     void stop();
 
+    // Real-time DSP equalizer — cycle or set preset while audio plays
+    void set_eq_preset(EqPreset p);
+    void cycle_eq();
+    EqPreset eq_preset() const { return eq_.preset(); }
+    const char* eq_preset_name() const { return eq_.preset_name(); }
+
 private:
     ma_context context_{};
     bool context_ready_ = false;
@@ -78,6 +85,8 @@ private:
     std::atomic<float> gain_{0.7f};
     std::atomic<bool> paused_{false};
     int volume_pct_ = 70;
+
+    DspEqualizer eq_{44100.0f}; // always present, bypassed when Flat
 
     static void data_callback(ma_device* device, void* output, const void* input, ma_uint32 frame_count);
 };

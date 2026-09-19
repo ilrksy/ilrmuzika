@@ -1,61 +1,133 @@
 #!/usr/bin/env python3
-import urllib.request
-import json
-import sys
-import re
+"""
+fast_yt_search.py — Mousiki Aidil Edition
+YouTube Innertube search. No API key. No OAuth.
 
-def search(query, limit=5):
-    url = "https://www.youtube.com/youtubei/v1/search"
-    headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+Usage:
+  fast_yt_search.py <query> [limit]
+  fast_yt_search.py stream <video_id>
+  fast_yt_search.py trending [limit]
+
+Output: one JSON line per result: {"id":"...","title":"...","uploader":"...","duration":225}
+"""
+
+import json, sys, re, urllib.request, urllib.error
+
+UA = "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0"
+INNERTUBE_URL = "https://www.youtube.com/youtubei/v1/search"
+INNERTUBE_PAYLOAD = {
+    "context": {
+        "client": {
+            "clientName": "WEB",
+            "clientVersion": "2.20231219.01.00",
+            "hl": "en",
+            "gl": "US"
+        }
     }
-    data = {
-        "context": {
-            "client": {
-                "clientName": "WEB",
-                "clientVersion": "2.20210721.00.00"
-            }
-        },
-        "query": query
-    }
-    
-    req = urllib.request.Request(url, data=json.dumps(data).encode("utf-8"), headers=headers)
+}
+
+def parse_duration(text):
+    """'3:45' or '1:02:03' -> seconds int"""
+    if not text:
+        return 0
+    parts = text.strip().split(":")
     try:
-        with urllib.request.urlopen(req, timeout=5) as response:
-            res = json.loads(response.read().decode())
-    except Exception as e:
-        print("{}", file=sys.stderr)
-        return
+        if len(parts) == 2:
+            return int(parts[0]) * 60 + int(parts[1])
+        elif len(parts) == 3:
+            return int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+    except Exception:
+        pass
+    return 0
 
-    contents = res.get("contents", {}).get("twoColumnSearchResultsRenderer", {}).get("primaryContents", {}).get("sectionListRenderer", {}).get("contents", [])
-    if not contents:
-        return
-        
-    items = contents[0].get("itemSectionRenderer", {}).get("contents", [])
-    
-    count = 0
-    for item in items:
-        video = item.get("videoRenderer")
-        if not video:
-            continue
-        vid_id = video.get("videoId")
-        title = video.get("title", {}).get("runs", [{}])[0].get("text", "")
-        uploader = video.get("ownerText", {}).get("runs", [{}])[0].get("text", "")
-        
-        if vid_id and title:
-            # Output in yt-dlp flat-playlist json format for compatibility
-            out = {
-                "id": vid_id,
-                "title": title,
-                "uploader": uploader
-            }
-            print(json.dumps(out))
-            count += 1
-            if count >= limit:
+def innertube_search(query, limit=10):
+    payload = dict(INNERTUBE_PAYLOAD)
+    payload["query"] = query
+    data = json.dumps(payload).encode()
+    req = urllib.request.Request(
+        INNERTUBE_URL,
+        data=data,
+        headers={"Content-Type": "application/json", "User-Agent": UA}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            raw = json.loads(resp.read().decode("utf-8", errors="replace"))
+    except Exception:
+        return []
+
+    results = []
+    # Walk the response tree to get video items
+    try:
+        contents = (raw.get("contents", {})
+                       .get("twoColumnSearchResultsRenderer", {})
+                       .get("primaryContents", {})
+                       .get("sectionListRenderer", {})
+                       .get("contents", []))
+        for section in contents:
+            items = section.get("itemSectionRenderer", {}).get("contents", [])
+            for item in items:
+                v = item.get("videoRenderer")
+                if not v:
+                    continue
+                vid_id = v.get("videoId", "")
+                title = ""
+                try:
+                    title = v["title"]["runs"][0]["text"]
+                except Exception:
+                    pass
+                uploader = ""
+                try:
+                    uploader = v["ownerText"]["runs"][0]["text"]
+                except Exception:
+                    pass
+                dur_text = ""
+                try:
+                    dur_text = v["lengthText"]["simpleText"]
+                except Exception:
+                    pass
+                duration = parse_duration(dur_text)
+                if vid_id and title:
+                    results.append({
+                        "id": vid_id,
+                        "title": title,
+                        "uploader": uploader,
+                        "duration": duration
+                    })
+                if len(results) >= limit:
+                    break
+            if len(results) >= limit:
                 break
+    except Exception:
+        pass
+    return results
+
+def do_stream(video_id):
+    """Print the YouTube watch URL for yt-dlp to consume."""
+    print(f"https://www.youtube.com/watch?v={video_id}")
+
+def do_trending(limit=10):
+    # Search for trending music as a proxy (Innertube trending requires different endpoint)
+    return innertube_search("top music trending 2024", limit)
 
 if __name__ == "__main__":
-    query = sys.argv[1]
-    limit = int(sys.argv[2]) if len(sys.argv) > 2 else 5
-    search(query, limit)
+    if len(sys.argv) < 2:
+        sys.exit(0)
+
+    cmd = sys.argv[1]
+
+    if cmd == "stream":
+        if len(sys.argv) >= 3:
+            do_stream(sys.argv[2])
+        sys.exit(0)
+
+    if cmd == "trending":
+        limit = int(sys.argv[2]) if len(sys.argv) > 2 else 10
+        for r in do_trending(limit):
+            print(json.dumps(r))
+        sys.exit(0)
+
+    # Normal search
+    query = cmd
+    limit = int(sys.argv[2]) if len(sys.argv) > 2 else 10
+    for r in innertube_search(query, limit):
+        print(json.dumps(r))

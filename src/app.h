@@ -16,6 +16,7 @@
 #include "native_duration.h"
 #include "online_source.h"
 #include "player.h"
+#include "dsp_equalizer.h"
 #include "settings.h"
 #include "snapshot.h"
 #include "sphere_visualizer.h"

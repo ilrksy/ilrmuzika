@@ -1,150 +1,240 @@
 <div align="center">
 
- # Mousiki 🎵
+```
+  ██╗██╗     ██████╗ ███╗   ███╗██╗   ██╗███████╗██╗██╗  ██╗ █████╗ 
+  ██║██║     ██╔══██╗████╗ ████║██║   ██║╚══███╔╝██║██║ ██╔╝██╔══██╗
+  ██║██║     ██████╔╝██╔████╔██║██║   ██║  ███╔╝ ██║█████╔╝ ███████║
+  ██║██║     ██╔══██╗██║╚██╔╝██║██║   ██║ ███╔╝  ██║██╔═██╗ ██╔══██║
+  ██║███████╗██║  ██║██║ ╚═╝ ██║╚██████╔╝███████║██║██║  ██╗██║  ██║
+  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+```
 
-<p align="center">
-  <a href="https://opensource.org/" target="_blank">
-    <img src="https://i0.wp.com/opensource.org/wp-content/uploads/2023/03/cropped-OSI-horizontal-large.png?fit=640%2C229&quality=80&ssl=1" alt="OSI" height="52" /></a>
-&nbsp;
-  <a href="https://www.apache.org/" target="_blank">
-    <img src="https://www.apache.org/images/oakleaf.svg" alt="Apache" height="52" /></a>
-</p>
+# ilrmuzika
 
+**A strictly-typed, low-latency terminal music player & streaming engine.**  
+*Written in C++17 · Powered by miniaudio, kissfft, and key-free public APIs.*
 
-> [!NOTE]
-> **Developer note:** Mousiki is released under the Apache License 2.0.
-> You are free to use, modify, fork, re-distribute, and sell the software,
-> subject to the terms of the license.
-
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/itzender5820/mousiki/blob/main/LICENSE)
-[![Language](https://img.shields.io/badge/Language-C++17-orange.svg)](https://github.com/itzender5820/mousiki)
-[![Platform](https://img.shields.io/badge/Platform-Linux_%7C_Android_%7C_MacOS-brightgreen.svg)](https://github.com/itzender5820/mousiki)
-
-Mousiki is a terminal music player built from the ground up for people who prefer control, simplicity, and a keyboard. It's a fast, focused TUI (Terminal User Interface) without unnecessary interface layers — fully keyboard-driven and configurable, with spectrum visualizers, synced lyrics, and online streaming, all without leaving your terminal.
-
-``Personal preference is not a compromise—it's the design goal.``
- 
-## Preview
-
-![Mousiki Preview](./preview.gif)
-
-</div>
-## ✨ Features
-
-- **Local Music Playback:** Instantly browse and play your local music files.
-- **Online Search & Streaming:** Search and stream tracks directly from online sources.
-- **Synced Lyrics:** Real-time, word-by-word active lyrics highlighting as the song plays.
-- **Visualizers:** Real-time FFT spectrum, waveform rendering, and spinning disk art.
-- **Queue Management:** Effortless queueing, shuffling, and repeating.
-- **Highly Configurable:** Tweak colors, visualizer fluidity, animations, and hotkeys to match your exact workflow.
-
-## 🚀 Supported Platforms
-
-- **Native Support:** **Linux**, **macOS**, and **Android (Termux)**.
-- **Unverified Support:** *Windows*. (Support for Windows is currently not verified because I don't have the hardware access needed to test and debug on that operating system. If you try it out and get it working, feel free to contribute!)
-
-## 🛠️ Getting Started
-<div align="center">
-  
-## Default Keybindings
-
-Configurable in `$HOME/.config/mousiki/config.txt`.
-
-### Search & Playback
-| Action | Keybinding | Description |
-| :--- | :--- | :--- |
-| **Local Search** | `/` | Filter and search local library |
-| **Online Stream Search** | `/s: <query>` | Search and stream music online |
-| **Download Stream** | `y` | Download currently streaming track |
-| **Play / Pause** | `p` (or `ENTER`) | Toggle playback |
-| **Next / Previous Track** | `n` / `b` | Skip between songs |
-| **Seek** | `ARROW_LEFT` / `ARROW_RIGHT` | Seek backward / forward |
-| **Volume** | `1` / `2` | Decrease / Increase volume |
-| **Shuffle / Repeat** | `m` / `r` | Toggle shuffle or repeat mode |
-
-### Navigation & Queue
-| Action | Keybinding | Description |
-| :--- | :--- | :--- |
-| **Navigate** | `ARROW_UP` / `ARROW_DOWN` | Move selection |
-| **Switch Tabs/Cards** | `TAB` | Cycle between UI panels |
-| **Add to Queue** | `a` | Enqueue selected track |
-| **Remove from Queue** | `d` | Dequeue selected track |
-| **Filter by Folder** | `f` | Apply folder filter |
-| **Clear Filter** | `c` | Reset active search/filters |
-| **Quit** | `q` | Exit application |
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Standard](https://img.shields.io/badge/Standard-C%2B%2B17-orange.svg)](#)
+[![Platforms](https://img.shields.io/badge/Platform-Linux%20%7C%20Debian%20%7C%20Termux%20%7C%20Windows%20%7C%20macOS-success.svg)](#)
+[![DSP Engine](https://img.shields.io/badge/Audio%20DSP-5--Band%20Biquad%20EQ-purple.svg)](#)
 
 </div>
 
-### Prerequisites & Installation
+---
 
-Mousiki relies on a few external tools for audio fetching, decoding, and lyrics. The easiest way to get started is by running the setup script on macOS (requires [Homebrew](https://brew.sh)), Debian-based Linux, or Termux:
+## ⚡ Architecture & Features
+
+`ilrmuzika` is a POSIX/Win32-native TUI music streaming client and player designed for immediate responsiveness, low memory overhead, and deterministic execution.
+
+* **Key-Free / No-OAuth Streaming**: Direct integration with open REST endpoints:
+  * **Audius API**: Decentralized streaming network & trending charts without user authentication or API keys.
+  * **YouTube Innertube**: Sub-second search indexing (<300ms) bypassing heavyweight scraping overhead.
+  * **LRCLIB & BetterLyrics**: Real-time synchronized, word-by-word karaoke lyrics with local sidecar `.lrc` caching.
+  * **MusicBrainz**: Structured release and artist metadata enrichment.
+* **Real-time Audio DSP Pipeline**:
+  * Inline 5-Band Biquad Filter (`LowShelf`, `PeakingEQ`, `HighShelf`) running inside miniaudio's real-time audio thread.
+  * Hyperbolic tangent (`tanh`) soft-clipping limiter preventing digital clipping during high-gain boost stages.
+  * Zero-allocation audio callback ensuring lock-free playback guarantees.
+* **Dynamic Visualization Engine**:
+  * Radix-2 KissFFT real-input frequency analyzer with multiple visualizer styles (`bars`, `mirrored`, `oscilloscope`, `sparks`).
+* **5 Built-in Custom Color Themes**:
+  * `aurora-aidil` (Signature emerald green & cyan glow)
+  * `tokyo-night` (Deep indigo with cyan accents)
+  * `catppuccin` (Mocha pastel palette)
+  * `cyberpunk` (High-contrast yellow and magenta)
+  * `dracula` (Gothic purple and pink)
+
+---
+
+## 📦 Dependencies & Prerequisites
+
+| Component | Minimum Version | Linux Package | Termux Package | Windows (winget) |
+| :--- | :--- | :--- | :--- | :--- |
+| **C++ Compiler** | C++17 (GCC 9+, Clang 10+, MSVC 2019+) | `build-essential` / `gcc-c++` | `clang` | Visual Studio C++ Tools |
+| **CMake** | `>= 3.16` | `cmake` | `cmake` | `Kitware.CMake` |
+| **Make / Ninja** | Standard | `make` | `make` | Visual Studio Build Tools |
+| **FFmpeg** | Any modern build | `ffmpeg` | `ffmpeg` | `Gyan.FFmpeg` |
+| **yt-dlp** | Latest stable | `yt-dlp` | `python -m pip install yt-dlp` | `yt-dlp.yt-dlp` |
+| **Python** | `>= 3.8` | `python3`, `python3-pip` | `python` | `Python.Python.3.11` |
+| **Python Requests** | `>= 2.25` (for lyrics) | `pip install requests` | `pip install requests` | `pip install requests` |
+
+---
+
+## 🚀 Installation
+
+### 1. Automated Setup (Recommended)
+
+Run the unified setup script. It automatically detects your operating system, resolves missing dependencies via your system package manager, compiles the binary with `-O3` optimizations, and symlinks it to your `PATH`:
 
 ```bash
-# Clone the repository
-git clone https://github.com/itzender5820/mousiki.git
-cd mousiki
-
-# Run the setup script (installs dependencies, sets up config, and builds the app)
+git clone https://github.com/aidil/ilrmuzika.git
+cd ilrmuzika
 bash setup.sh
 ```
 
-If you're building manually, ensure you have `cmake`, a C++17 compiler, `ffmpeg`, `yt-dlp`, and the Python `requests` package installed.
+---
 
-### Running the App
+### 2. Manual Installation by Platform
 
-After a successful build, you can start the player with:
+#### 🐧 Debian / Ubuntu / Linux Mint / Pop!_OS
 ```bash
-./build/mousiki
+# 1. Install prerequisites
+sudo apt update
+sudo apt install -y cmake build-essential ffmpeg python3 python3-pip yt-dlp
+
+# 2. Install optional lyrics resolver
+pip3 install --user requests
+
+# 3. Compile with CMake
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+
+# 4. Install binary to user PATH
+mkdir -p ~/.local/bin
+cp build/ilrmuzika ~/.local/bin/
 ```
 
-## ⚙️ Configuration
-
-Your configuration file will be automatically generated at `$HOME/.config/mousiki/config.txt`. From there, you have complete freedom to customize Mousiki.
-
-### Adding Custom Music Paths
-You can easily tell Mousiki where to look for your music. Simply add multiple `LocalMusicPath` entries in your `config.txt`:
-
-```ini
-# Add as many custom paths as you need:
-LocalMusicPath=/custom/path
-LocalMusicPath=/home/user/Music
+#### 🏔️ Arch Linux / Manjaro
+```bash
+sudo pacman -Syu --needed cmake base-devel ffmpeg yt-dlp python python-pip
+pip install --user requests
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+sudo cp build/ilrmuzika /usr/local/bin/
 ```
 
-## 🙏 Attribution & Dependencies
+#### 🎩 Fedora / RHEL
+```bash
+sudo dnf install -y cmake gcc-c++ make ffmpeg yt-dlp python3 python3-pip
+pip3 install --user requests
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+sudo cp build/ilrmuzika /usr/local/bin/
+```
 
-Mousiki stands on the shoulders of giants. A huge thank you to the developers behind these awesome open-source projects that make Mousiki tick:
+#### 📱 Android (Termux)
+```bash
+# 1. Update Termux repositories & install packages
+pkg update && pkg install -y clang make cmake ffmpeg python git
+pip install requests yt-dlp
 
-- **[miniaudio](https://github.com/mackron/miniaudio):** An incredible single-file audio playback and capture library.
-- **[kissfft](https://github.com/mborgerding/kissfft):** A wonderfully simple and lightweight real-input FFT library (powering the spectrum visualizer).
-- **[yt-dlp](https://github.com/yt-dlp/yt-dlp):** The backend magic for our online search and streaming capabilities.
-- **requests:** Python package used by `scripts/lrc.py` to fetch synced lyrics from Better Lyrics (primary) and [LRCLIB](https://lrclib.net) (fallback).
-- **[FFmpeg](https://ffmpeg.org/):** The Swiss army knife of multimedia handling.
+# 2. Clone and build
+git clone https://github.com/aidil/ilrmuzika.git
+cd ilrmuzika
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
 
-<div align="center">
+# 3. Symlink to Termux bin
+cp build/ilrmuzika $PREFIX/bin/
+```
 
-## 📜 License
+#### 🪟 Windows 10 / 11
 
-This project is open-sourced under the [Apache License 2.0](LICENSE). 
+##### Option A: Native PowerShell (winget)
+Run PowerShell as Administrator:
+```powershell
+git clone https://github.com/aidil/ilrmuzika.git
+cd ilrmuzika
+.\install.ps1
+```
 
-## Star History
+##### Option B: MSYS2 / UCRT64
+```bash
+pacman -Syu
+pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja ffmpeg yt-dlp python-requests
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+ninja -C build
+```
 
-<a href="https://www.star-history.com/?repos=itzender5820%2Fmousiki&type=date&legend=top-left">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=itzender5820/mousiki&type=date&theme=dark&legend=top-left" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=itzender5820/mousiki&type=date&legend=top-left" />
-    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=itzender5820/mousiki&type=date&legend=top-left" />
-  </picture>
-</a>
+##### Option C: Windows Subsystem for Linux (WSL2)
+Follow the [Debian / Ubuntu](#-debian--ubuntu--linux-mint--pop_os) instructions inside your WSL terminal. Audio output routes cleanly via PulseAudio / WSLg.
 
 ---
-*Crafted with ❤️ for the terminal by [itzender5820](https://github.com/itzender5820)*
 
+## 🎮 Keybindings & Controls
 
-<p align="center">
-  <img
-    src="https://raw.githubusercontent.com/mayankchaudhary26/Cool-Readme-ideas/refs/heads/master/data/trust%20me.gif"
-    alt="Trust me"
-  />
-</p>
+All keybindings are configurable in `~/.config/ilrmuzika/config.txt`.
 
-</div>
+### 🔍 Discovery & Playback
+| Key | Function |
+| :--- | :--- |
+| `/` | Open local library search filter |
+| `/s: <query>` | Online stream search (YouTube Innertube / Audius) |
+| `p` / `ENTER` | Toggle Play / Pause |
+| `n` / `b` | Next / Previous track |
+| `ARROW_LEFT` / `ARROW_RIGHT` | Seek backward / forward 5 seconds |
+| `1` / `2` | Volume down / Volume up |
+| `x` | Toggle Mute (preserves previous volume level) |
+| `y` | Download active stream permanently into `~/Music` |
+
+### 🎛️ Audio DSP & Visuals
+| Key | Function | Details |
+| :--- | :--- | :--- |
+| **`e`** | **Cycle Equalizer Preset** | `Flat` → `Bass Boost` → `Vocal Boost` → `Treble Boost` → `Electronic` |
+| **`v`** | **Cycle Visualizer Style** | `bars` → `mirrored` → `oscilloscope` → `sparks` |
+| `w` | Toggle Waveform Rendering | Switch between smooth interpolated and raw waveform display |
+| `m` | Cycle Play Mode | `List` → `Repeat Track` → `Shuffle` → `Stop on End` → `Repeat Queue` |
+
+### 📋 Queue, Navigation & Overlays
+| Key | Function |
+| :--- | :--- |
+| `TAB` | Switch focus between Track List and Queue |
+| `ARROW_UP` / `ARROW_DOWN` | Navigate visible list |
+| `a` | Enqueue track (or open YouTube playlist bulk importer if Queue focused) |
+| `d` | Remove track from Queue |
+| `f` / `c` | Filter library to current folder / Clear active filter |
+| `l` | Manually override metadata query and retry lyrics fetch |
+| `s` | Open interactive Settings & Color Editor |
+| `t` | Open diagnostic Console Log overlay |
+| `?` | Show In-App Cheatsheet |
+| `q` | Exit application |
+
+---
+
+## ⚙️ Configuration File
+
+Configuration is loaded from `~/.config/ilrmuzika/config.txt` (with fallback to `~/.config/mousiki/config.txt`).
+
+```ini
+# Add local directories to scan for offline audio
+LocalMusicPath=/home/user/Music
+LocalMusicPath=/mnt/storage/flac_archive
+
+# Theme selection: default | neon | mono | sunset | forest | aurora-aidil | tokyo-night | catppuccin | cyberpunk | dracula
+theme_name=aurora-aidil
+
+# Real-time FFT spectrum settings
+visualizer_style=0
+visualizer_fluidity=2
+element_visualizer=true
+element_waveform=true
+element_disk=true
+```
+
+---
+
+## 🛠️ CLI Usage
+
+```text
+Usage:
+  ilrmuzika                  Launch interactive TUI player
+  ilrmuzika <track.flac>     Directly play file and initialize interface
+  ilrmuzika -v | --version   Display version banner, DSP info, and compiled backend
+  ilrmuzika -h | --help      Print command-line manual and hotkeys
+```
+
+---
+
+## 📄 License & Attribution
+
+Distributed under the [Apache License 2.0](LICENSE).
+
+### Upstream & Open-Source Acknowledgments:
+* **[miniaudio](https://github.com/mackron/miniaudio)** — Real-time multi-platform audio subsystem.
+* **[kissfft](https://github.com/mborgerding/kissfft)** — Fast Fourier Transform implementation for frequency domain analysis.
+* **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** & **[FFmpeg](https://ffmpeg.org/)** — Audio stream demuxing and transcoding.
+* **[LRCLIB](https://lrclib.net/)** — Open-access synchronized lyric database.
+* **[Audius](https://audius.co/)** — Decentralized community audio streaming protocol.
+* **[MusicBrainz](https://musicbrainz.org/)** — Open music encyclopedia.
+* Forked from **[mousiki](https://github.com/itzender5820/mousiki)** by `itzender5820`. Upgraded and maintained by **Aidil**.

@@ -1815,6 +1815,19 @@ void App::handle_key(int key) {
                 mode_ = Mode::RetryLyrics;
             }
             break;
+        case 'e': case 'E': // cycle EQ preset (Flat → Bass → Vocal → Treble → Electronic → Flat)
+            player_.cycle_eq();
+            status_line_ = std::string("EQ: ") + player_.eq_preset_name();
+            log_event(std::string("EQ: ") + player_.eq_preset_name());
+            break;
+        case 'v': case 'V': // cycle visualizer style
+            settings_.viz_style = (settings_.viz_style + 1) % 4;
+            {
+                static const char* viz_names[] = {"bars", "mirrored", "oscilloscope", "sparks"};
+                status_line_ = std::string("Viz: ") + viz_names[settings_.viz_style];
+                log_event(std::string("viz style: ") + viz_names[settings_.viz_style]);
+            }
+            break;
         case 'w': case 'W': // toggle waveform style (raw/smooth) directly, without going into Settings
             settings_.waveform_smooth = !settings_.waveform_smooth;
             recompute_waveform_for_current_track();
@@ -2890,6 +2903,8 @@ void App::build_cheatsheet_screen(std::ostringstream& frame, int W) const {
         {"HKeyIncreaseVolume",              "Volume up"},
         {"HKeyDecreaseVolume",              "Volume down"},
         {"HKeyCyclePlayMode",               "Cycle play mode (list/repeat/shuffle/repeat queue/stop)"},
+        {"HKeyCycleEqualizer",              "Cycle DSP Equalizer preset (Flat/Bass/Vocal/Treble/Electro)"},
+        {"HKeyCycleVizStyle",               "Cycle visualizer style (bars/mirrored/oscilloscope/sparks)"},
         {"HKeyRefreshUi",                   "Refresh UI (redraw)"},
         {"HKeyConsole",                     "Console / logs"},
         {"HKeySwitchBetweenCards",          "Switch between panels"},

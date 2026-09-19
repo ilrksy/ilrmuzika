@@ -225,7 +225,10 @@ const char* play_mode_name(int mode) {
 // =====================================================================
 
 const std::vector<std::string>& theme_names() {
-    static const std::vector<std::string> names = {"default", "neon", "mono", "sunset", "forest"};
+    static const std::vector<std::string> names = {
+        "default", "neon", "mono", "sunset", "forest",
+        "aurora-aidil", "tokyo-night", "catppuccin", "cyberpunk", "dracula"
+    };
     return names;
 }
 
@@ -266,6 +269,62 @@ void apply_theme(Settings& s, const std::string& theme_name) {
         s.queue_color = "15"; s.queue_playing_color = "10";
         s.button_color = "10";
         s.visualizer_color = "10"; s.visualizer_color_end = "11";
+    } else if (theme_name == "aurora-aidil") {
+        // Signature emerald & cyan glow — Aidil Edition theme
+        s.disk_color = "49"; s.disk_color_end = "51";        // bright emerald → cyan
+        s.border_color = "36"; s.border_color_bottom = "36";
+        s.active_line_color = "15"; s.active_word_color = "49"; s.inactive_line_color = "240";
+        s.active_line_bg_color.clear(); s.active_word_bg_color.clear();
+        s.progress_remaining_color = "240"; s.progress_played_color = "49";
+        s.list_color = "252"; s.list_playing_color = "49"; s.list_cursor_color = "51";
+        s.list_cursor_bg_color = "238";
+        s.queue_color = "252"; s.queue_playing_color = "49";
+        s.button_color = "49";
+        s.visualizer_color = "49"; s.visualizer_color_end = "51";
+    } else if (theme_name == "tokyo-night") {
+        // Deep indigo + pastel cyan — Tokyo Night palette
+        s.disk_color = "111"; s.disk_color_end = "75";       // pastel blue → indigo
+        s.border_color = "61"; s.border_color_bottom = "61";
+        s.active_line_color = "189"; s.active_word_color = "111"; s.inactive_line_color = "240";
+        s.progress_remaining_color = "237"; s.progress_played_color = "111";
+        s.list_color = "189"; s.list_playing_color = "111"; s.list_cursor_color = "75";
+        s.list_cursor_bg_color = "236";
+        s.queue_color = "189"; s.queue_playing_color = "111";
+        s.button_color = "75";
+        s.visualizer_color = "61"; s.visualizer_color_end = "111";
+    } else if (theme_name == "catppuccin") {
+        // Warm mocha pastels — Catppuccin Mocha
+        s.disk_color = "183"; s.disk_color_end = "217";      // mauve → peach
+        s.border_color = "60"; s.border_color_bottom = "60";
+        s.active_line_color = "224"; s.active_word_color = "183"; s.inactive_line_color = "240";
+        s.progress_remaining_color = "237"; s.progress_played_color = "183";
+        s.list_color = "224"; s.list_playing_color = "183"; s.list_cursor_color = "217";
+        s.list_cursor_bg_color = "236";
+        s.queue_color = "224"; s.queue_playing_color = "183";
+        s.button_color = "217";
+        s.visualizer_color = "183"; s.visualizer_color_end = "217";
+    } else if (theme_name == "cyberpunk") {
+        // Hot yellow + magenta + cyan — Cyberpunk 2077 vibe
+        s.disk_color = "226"; s.disk_color_end = "201";      // yellow → magenta
+        s.border_color = "201"; s.border_color_bottom = "201";
+        s.active_line_color = "15"; s.active_word_color = "226"; s.inactive_line_color = "240";
+        s.progress_remaining_color = "240"; s.progress_played_color = "226";
+        s.list_color = "15"; s.list_playing_color = "226"; s.list_cursor_color = "201";
+        s.list_cursor_bg_color = "235";
+        s.queue_color = "15"; s.queue_playing_color = "226";
+        s.button_color = "201";
+        s.visualizer_color = "226"; s.visualizer_color_end = "201";
+    } else if (theme_name == "dracula") {
+        // Gothic purple + neon pink — Dracula theme
+        s.disk_color = "141"; s.disk_color_end = "212";      // purple → pink
+        s.border_color = "97"; s.border_color_bottom = "97";
+        s.active_line_color = "255"; s.active_word_color = "212"; s.inactive_line_color = "240";
+        s.progress_remaining_color = "238"; s.progress_played_color = "212";
+        s.list_color = "255"; s.list_playing_color = "212"; s.list_cursor_color = "141";
+        s.list_cursor_bg_color = "236";
+        s.queue_color = "255"; s.queue_playing_color = "212";
+        s.button_color = "141";
+        s.visualizer_color = "141"; s.visualizer_color_end = "212";
     } else { // "default"
         s.disk_color = "14"; s.disk_color_end = "12";
         s.border_color = "8";
@@ -312,7 +371,8 @@ void apply_default_hotkeys(Settings& s) {
             {"HKeyFilterForFolder",             "f"},
             {"HKeyClearFilter",                 "c"},
             {"HKeyQuit",                        "q"},
-            {"HKeyResetPreference",             "e"},
+            {"HKeyCycleEqualizer",              "e"},
+            {"HKeyCycleVizStyle",               "v"},
             {"HKeyDownloadStream",              "y"},
             {"HKeyRefreshUi",                   "k"},
             {"HKeyConsole",                     "t"},
@@ -336,7 +396,11 @@ void apply_default_hotkeys(Settings& s) {
 fs::path config_path() {
     const char* home = std::getenv("HOME");
     fs::path base = home ? fs::path(home) : fs::path(".");
-    return base / ".config" / "mousiki" / "config.txt";
+    fs::path modern = base / ".config" / "ilrmuzika" / "config.txt";
+    if (fs::exists(modern)) return modern;
+    fs::path old = base / ".config" / "mousiki" / "config.txt";
+    if (fs::exists(old)) return old;
+    return modern;
 }
 
 // Legacy path for migration
@@ -753,13 +817,18 @@ Settings load_settings() {
     apply_default_hotkeys(s);
     if (s.about_app_lines.empty()) {
         s.about_app_lines = {
-            "Devloper : ender                Github   : itzender5820",
-            "Email    : itz.ender5820@gmail.com",
-            "Version  : orignal and final v1.0        Licence  : Apache licence 2.0",
+            "  ilrmuzika",
+            "  ══════════════════════════════════════════",
+            "  Developer  : Aidil",
+            "  Version    : ilrmuzika v1.0       License  : Apache 2.0",
             "",
-            "Mousiki",
-            "A terminal music player built for people who prefer control.",
-            "Zero external UI bloat: 100% native POSIX terminal runtime.",
+            "  A terminal music player built for those who prefer control.",
+            "  Spotify-level features. Zero telemetry. 100% terminal.",
+            "",
+            "  Powered by: Audius (streaming) · LRCLIB (lyrics)",
+            "              MusicBrainz (metadata) · YouTube (search)",
+            "  Audio DSP : Real-time biquad EQ (Flat/Bass/Vocal/Treble/Electronic)",
+            "  Themes    : aurora-aidil · tokyo-night · catppuccin · cyberpunk · dracula",
         };
     }
     return s;
